@@ -1,5 +1,7 @@
 {
-  "public": ".",
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": ".",
+  "framework": "html",
   "rewrites": [
     {
       "source": "/:path((?!api/.*).*)",
