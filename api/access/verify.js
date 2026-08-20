@@ -3,12 +3,16 @@ const crypto = require("crypto");
 function verifyToken(token) {
   const secret = process.env.ACCESS_TOKEN_SECRET;
 
-  if (!secret || !token) return null;
+  if (!secret || !token) {
+    return null;
+  }
 
   try {
     const parts = token.split(".");
 
-    if (parts.length !== 2) return null;
+    if (parts.length !== 2) {
+      return null;
+    }
 
     const [encoded, signature] = parts;
 
@@ -28,7 +32,7 @@ function verifyToken(token) {
     }
 
     const payload = JSON.parse(
-      Buffer.from(encoded, "base64url").toString()
+      Buffer.from(encoded, "base64url").toString("utf8")
     );
 
     if (payload.exp && Date.now() > payload.exp) {
@@ -54,24 +58,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    /*
-     * The frontend currently sends:
-     * { accessToken: "..." }
-     *
-     * We also continue accepting:
-     * Authorization: Bearer <token>
-     *
-     * This keeps the endpoint compatible with both forms.
-     */
-    const authHeader = req.headers.authorization || "";
-
     let token = "";
+
+    // Accept Authorization: Bearer <token>
+    const authHeader = req.headers.authorization || "";
 
     if (authHeader.startsWith("Bearer ")) {
       token = authHeader.slice(7).trim();
     }
 
-    if (!token && req.body && typeof req.body.accessToken === "string") {
+    // Also accept { accessToken: "<token>" }
+    if (
+      !token &&
+      req.body &&
+      typeof req.body.accessToken === "string"
+    ) {
       token = req.body.accessToken.trim();
     }
 
@@ -94,7 +95,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       valid: true,
       orderId: payload.orderId,
-      email: payload.email
+      email: payload.email || null
     });
 
   } catch (error) {
@@ -105,4 +106,4 @@ export default async function handler(req, res) {
       error: "Unable to verify access"
     });
   }
-      }
+        }
