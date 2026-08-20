@@ -1,0 +1,9 @@
+{
+  "public": ".",
+  "rewrites": [
+    {
+      "source": "/:path((?!api/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
