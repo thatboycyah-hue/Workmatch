@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkMatch — Find remote jobs that actually fit you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#161B2E;
+    --ink-soft:#232A46;
+    --ink-line: rgba(241,238,229,.14);
+    --paper:#ECEEE7;
+    --paper-line: rgba(22,27,46,.12);
+    --card:#F8F7F2;
+    --amber:#E8A33D;
+    --amber-dim: #a9772c;
+    --teal:#3FA396;
+    --coral:#D65D6E;
+    --ink-70: rgba(241,238,229,.7);
+    --ink-45: rgba(241,238,229,.45);
+    --dark-70: rgba(22,27,46,.7);
+    --dark-45: rgba(22,27,46,.45);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    background:var(--ink);
+    color:var(--paper);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; letter-spacing:.02em; }
+  h1,h2,h3,.display{ font-family:'Space Grotesk', sans-serif; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  .screen{ display:none; min-height:100vh; }
+  .screen.active{ display:block; animation: fadeIn .5s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 24px; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:26px 24px; max-width:640px; margin:0 auto; }
+  .logo{ font-weight:700; font-size:19px; letter-spacing:-.02em; display:flex; align-items:center; gap:8px;}
+  .logo .dot{ width:8px; height:8px; border-radius:50%; background:var(--amber); }
+
+  /* ---------- LANDING ---------- */
+  .stars{ position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5; }
+  .hero{ position:relative; z-index:1; padding:60px 0 40px; text-align:left; }
+  .eyebrow{ font-size:12px; color:var(--amber); text-transform:uppercase; letter-spacing:.14em; margin-bottom:18px; display:flex; align-items:center; gap:10px;}
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--amber); display:inline-block; }
+  .hero h1{ font-size:44px; line-height:1.08; font-weight:600; letter-spacing:-.02em; margin-bottom:20px; }
+  .hero h1 em{ font-style:normal; color:var(--amber); }
+  .hero p{ font-size:17px; color:var(--ink-70); max-width:480px; line-height:1.6; margin-bottom:34px; }
+  .btn-primary{ background:var(--amber); color:var(--ink); font-weight:600; font-size:15px; padding:15px 26px; border-radius:100px; display:inline-flex; align-items:center; gap:10px; transition:transform .15s ease, background .15s ease; }
+  .btn-primary:hover{ transform:translateY(-2px); background:#f0ae4c; }
+  .fineprint{ font-size:12px; color:var(--ink-45); margin-top:14px; }
+
+  .how{ padding:50px 0 70px; border-top:1px solid var(--ink-line); }
+  .how h2{ font-size:13px; text-transform:uppercase; letter-spacing:.14em; color:var(--ink-45); margin-bottom:28px; }
+  .how-steps{ display:grid; gap:22px; }
+  .how-step{ display:grid; grid-template-columns:34px 1fr; gap:16px; align-items:start; }
+  .how-step .mark{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--amber); border:1px solid var(--ink-line); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+  .how-step h3{ font-size:16px; font-weight:600; margin-bottom:4px; }
+  .how-step p{ font-size:14px; color:var(--ink-70); line-height:1.55; }
+
+  /* ---------- INTERVIEW ---------- */
+  .interview-shell{ min-height:100vh; display:flex; flex-direction:column; }
+  .flightpath{ padding:22px 24px 0; max-width:640px; margin:0 auto; width:100%; }
+  .flightpath-track{ position:relative; height:2px; background:var(--ink-line); border-radius:2px; margin:14px 0 6px; }
+  .flightpath-fill{ position:absolute; left:0; top:0; height:100%; background:var(--amber); border-radius:2px; transition:width .5s ease; }
+  .flightpath-plane{ position:absolute; top:50%; transform:translate(-50%,-50%); font-size:14px; transition:left .5s ease; }
+  .flightpath-meta{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-45); text-transform:uppercase; letter-spacing:.1em; }
+
+  .q-stage{ flex:1; display:flex; align-items:center; padding:30px 0 60px; }
+  .q-inner{ max-width:640px; margin:0 auto; padding:0 24px; width:100%; }
+  .q-tag{ font-size:12px; color:var(--amber); text-transform:uppercase; letter-spacing:.12em; margin-bottom:14px; }
+  .q-text{ font-size:28px; font-weight:600; line-height:1.25; letter-spacing:-.01em; margin-bottom:8px; }
+  .q-sub{ font-size:14px; color:var(--ink-70); margin-bottom:30px; }
+  .ack{ font-size:14px; color:var(--teal); margin-bottom:18px; min-height:18px; }
+
+  .opt-grid{ display:grid; gap:10px; }
+  .opt-grid.cols-2{ grid-template-columns:1fr 1fr; }
+  .opt{ text-align:left; border:1px solid var(--ink-line); border-radius:12px; padding:16px 18px; font-size:15px; color:var(--paper); background:var(--ink-soft); transition:border-color .15s ease, background .15s ease, transform .1s ease; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .opt:hover{ border-color:var(--amber); transform:translateY(-1px); }
+  .opt.selected{ border-color:var(--amber); background:rgba(232,163,61,.12); }
+  .opt .check{ width:18px; height:18px; border-radius:5px; border:1px solid var(--ink-line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .opt.selected .check{ background:var(--amber); border-color:var(--amber); color:var(--ink); }
+  .opt.round .check{ border-radius:50%; }
+
+  .q-actions{ margin-top:30px; display:flex; align-items:center; gap:16px; }
+  .btn-next{ background:var(--amber); color:var(--ink); font-weight:600; font-size:14px; padding:13px 24px; border-radius:100px; opacity:.4; pointer-events:none; transition:opacity .15s ease; }
+  .btn-next.ready{ opacity:1; pointer-events:auto; }
+  .btn-back{ font-size:13px; color:var(--ink-45); }
+  .btn-back:hover{ color:var(--paper); }
+
+  .text-input{ width:100%; background:var(--ink-soft); border:1px solid var(--ink-line); border-radius:12px; padding:16px 18px; color:var(--paper); font-size:16px; font-family:inherit; }
+  .text-input:focus{ outline:none; border-color:var(--amber); }
+  .text-input::placeholder{ color:var(--ink-45); }
+
+  /* ---------- MATCHING LOADER ---------- */
+  .matching{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; }
+  .radar{ width:120px; height:120px; border-radius:50%; border:1px solid var(--ink-line); position:relative; margin-bottom:34px; }
+  .radar::before{ content:''; position:absolute; inset:18px; border-radius:50%; border:1px solid var(--ink-line); }
+  .radar::after{ content:''; position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, transparent 0deg, rgba(232,163,61,.55) 40deg, transparent 60deg); animation: spin 1.4s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .matching h2{ font-size:22px; margin-bottom:10px; }
+  .matching p{ font-size:14px; color:var(--ink-70); }
+  .matching .step-log{ margin-top:26px; font-size:12px; color:var(--ink-45); font-family:'IBM Plex Mono', monospace; min-height:18px; }
+
+  /* ---------- RESULTS ---------- */
+  .results-shell{ background:var(--paper); color:var(--ink); min-height:100vh; padding-bottom:80px; }
+  .results-top{ padding:36px 24px 8px; max-width:640px; margin:0 auto; }
+  .results-top .eyebrow{ color:var(--amber-dim); }
+  .results-top h2{ font-size:26px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px; }
+  .results-top p{ font-size:14px; color:var(--dark-70); max-width:460px; line-height:1.55; }
+
+  .pass-list{ max-width:640px; margin:26px auto 0; padding:0 24px; display:grid; gap:18px; }
+
+  .pass{ position:relative; background:var(--card); border-radius:var(--radius); border:1px solid var(--paper-line); overflow:hidden; display:grid; grid-template-columns:1fr 96px; }
+  .pass-main{ padding:20px 20px 18px; }
+  .pass-row1{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .pass-match{ font-family:'IBM Plex Mono',monospace; font-size:12px; background:rgba(63,163,150,.14); color:#2a746a; padding:3px 9px; border-radius:100px; font-weight:600; }
+  .pass-elig{ font-size:11px; color:#2a746a; display:flex; align-items:center; gap:4px; }
+  .pass-elig::before{ content:''; width:6px; height:6px; border-radius:50%; background:#3FA396; }
+  .pass-title{ font-size:18px; font-weight:600; margin-bottom:6px; letter-spacing:-.01em; }
+  .pass-meta{ display:flex; flex-wrap:wrap; gap:12px; font-size:13px; color:var(--dark-70); margin-bottom:12px; }
+  .pass-why{ font-size:12.5px; color:var(--dark-45); line-height:1.6; border-top:1px dashed var(--paper-line); padding-top:10px; }
+  .pass-why b{ color:#2a746a; font-weight:600; }
+  .pass-stub{ background:var(--ink); color:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:10px 8px; text-align:center; }
+  .pass-stub::before{ content:''; position:absolute; left:-1px; top:0; bottom:0; width:1px; background-image:radial-gradient(circle, var(--paper) 1.5px, transparent 1.6px); background-size:1px 10px; background-repeat:repeat-y; opacity:.5;}
+  .pass-stub .big{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--amber); line-height:1; }
+  .pass-stub .lbl{ font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-45); margin-top:4px; }
+  .apply-btn{ margin-top:14px; width:100%; background:var(--ink); color:var(--paper); font-size:13px; font-weight:600; padding:11px; border-radius:9px; }
+  .apply-btn:hover{ background:#0e1120; }
+
+  .more-cta{ max-width:640px; margin:38px auto 0; padding:0 24px; }
+  .more-card{ background:var(--ink); color:var(--paper); border-radius:var(--radius); padding:26px 24px; text-align:center; }
+  .more-card h3{ font-size:19px; margin-bottom:8px; }
+  .more-card p{ font-size:13.5px; color:var(--ink-70); margin-bottom:18px; }
+
+  /* locked preview strip */
+  .locked-strip{ max-width:640px; margin:36px auto 0; padding:0 24px; }
+  .locked-strip h3{ font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--dark-45); margin-bottom:14px; }
+  .locked-row{ display:grid; gap:10px; }
+  .locked-card{ position:relative; background:var(--card); border:1px solid var(--paper-line); border-radius:12px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; overflow:hidden; }
+  .locked-card .lk-left{ filter:blur(5px); user-select:none; }
+  .locked-card .lk-title{ font-weight:600; font-size:14.5px; margin-bottom:4px; }
+  .locked-card .lk-meta{ font-size:12px; color:var(--dark-45); }
+  .locked-card .lk-lock{ font-size:16px; color:var(--dark-45); flex-shrink:0; margin-left:14px;}
+
+  /* ---------- UNLOCK ---------- */
+  .unlock-shell{ background:var(--ink); min-height:100vh; display:flex; align-items:center; padding:60px 24px; }
+  .unlock-card{ max-width:440px; margin:0 auto; width:100%; }
+  .unlock-card .eyebrow{ justify-content:center; }
+  .unlock-card h2{ font-size:26px; text-align:center; margin-bottom:10px; letter-spacing:-.01em; }
+  .unlock-card > p.lead{ text-align:center; font-size:14.5px; color:var(--ink-70); margin-bottom:32px; line-height:1.6; }
+  .unlock-count{ text-align:center; margin-bottom:32px; }
+  .unlock-count .n{ font-family:'Space Grotesk',sans-serif; font-size:52px; font-weight:700; color:var(--amber); line-height:1; }
+  .unlock-count .lbl{ font-size:12px; color:var(--ink-45); text-transform:uppercase; letter-spacing:.1em; margin-top:6px; }
+
+  .unlock-list{ display:grid; gap:12px; margin-bottom:32px; }
+  .unlock-item{ display:flex; gap:12px; align-items:flex-start; font-size:14px; color:var(--ink-70); }
+  .unlock-item .ic{ width:20px; height:20px; border-radius:50%; background:rgba(63,163,150,.18); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; margin-top:1px; }
+
+  .price-box{ border:1px solid var(--ink-line); border-radius:14px; padding:20px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .price-box .p-left .p-label{ font-size:13px; color:var(--ink-70); margin-bottom:3px; }
+  .price-box .p-left .p-note{ font-size:11.5px; color:var(--ink-45); }
+  .price-box .p-amt{ font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--paper); }
+
+  .btn-unlock{ width:100%; background:var(--amber); color:var(--ink); font-weight:600; font-size:15px; padding:16px; border-radius:100px; margin-bottom:12px; }
+  .btn-unlock:hover{ background:#f0ae4c; }
+  .unlock-fine{ text-align:center; font-size:11.5px; color:var(--ink-45); line-height:1.6; }
+  .unlock-fine a{ color:var(--ink-70); }
+  .back-link{ display:block; text-align:center; margin-top:22px; font-size:13px; color:var(--ink-45); }
+
+  /* ---------- FULL FEED ---------- */
+  .feed-shell{ background:var(--paper); color:var(--ink); min-height:100vh; padding-bottom:60px; }
+  .feed-top{ max-width:640px; margin:0 auto; padding:34px 24px 18px; }
+  .feed-top h2{ font-size:22px; font-weight:600; margin-bottom:4px; }
+  .feed-top p{ font-size:13.5px; color:var(--dark-45); }
+  .filters{ display:flex; gap:8px; overflow-x:auto; padding:14px 24px; max-width:640px; margin:0 auto; }
+  .filter-chip{ font-size:12.5px; padding:8px 14px; border-radius:100px; border:1px solid var(--paper-line); white-space:nowrap; color:var(--dark-70); }
+  .filter-chip.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .feed-list{ max-width:640px; margin:8px auto 0; padding:0 24px; display:grid; gap:14px; }
+  .feed-card{ background:var(--card); border:1px solid var(--paper-line); border-radius:12px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; gap:14px; }
+  .feed-card .fc-title{ font-weight:600; font-size:14.5px; margin-bottom:5px; }
+  .feed-card .fc-meta{ font-size:12px; color:var(--dark-45); display:flex; gap:10px; flex-wrap:wrap; }
+  .feed-card .fc-match{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#2a746a; background:rgba(63,163,150,.14); padding:2px 8px; border-radius:100px; margin-right:8px; }
+  .feed-apply{ background:var(--ink); color:var(--paper); font-size:12.5px; font-weight:600; padding:9px 16px; border-radius:8px; flex-shrink:0; }
+  .feed-apply:hover{ background:#0e1120; }
+  .unlocked-banner{ max-width:640px; margin:0 auto 10px; padding:0 24px; }
+  .unlocked-banner div{ background:rgba(63,163,150,.12); color:#2a746a; font-size:12.5px; padding:10px 14px; border-radius:9px; display:flex; align-items:center; gap:8px; }
+
+  /* ---------- JOB DETAIL MODAL (view full listing right on WorkMatch) ---------- */
+  .pass, .feed-card{ cursor:pointer; }
+  .job-modal-backdrop{ display:none; position:fixed; inset:0; background:rgba(10,12,20,.6); z-index:50; align-items:flex-end; justify-content:center; }
+  .job-modal-backdrop.active{ display:flex; animation: fadeIn .2s ease; }
+  .job-modal{ background:var(--paper); color:var(--ink); width:100%; max-width:640px; max-height:88vh; overflow-y:auto; border-radius:20px 20px 0 0; padding:28px 24px 32px; position:relative; }
+  @media (min-width:680px){ .job-modal-backdrop{ align-items:center; } .job-modal{ border-radius:16px; max-height:80vh; } }
+  .jm-close{ position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%; background:var(--card); border:1px solid var(--paper-line); font-size:16px; display:flex; align-items:center; justify-content:center; color:var(--dark-70); }
+  .jm-match{ font-family:'IBM Plex Mono',monospace; font-size:12px; background:rgba(63,163,150,.14); color:#2a746a; padding:3px 9px; border-radius:100px; font-weight:600; display:inline-block; margin-bottom:14px; }
+  .jm-title{ font-size:22px; font-weight:600; letter-spacing:-.01em; margin-bottom:6px; padding-right:36px; }
+  .jm-company{ font-size:14.5px; color:var(--dark-70); margin-bottom:16px; }
+  .jm-meta{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .jm-meta span{ font-size:12.5px; background:var(--card); border:1px solid var(--paper-line); padding:6px 11px; border-radius:100px; color:var(--dark-70); }
+  .jm-why{ font-size:13px; color:var(--dark-45); line-height:1.6; border-top:1px dashed var(--paper-line); border-bottom:1px dashed var(--paper-line); padding:14px 0; margin-bottom:18px; }
+  .jm-why b{ color:#2a746a; font-weight:600; }
+  .jm-desc-label{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--dark-45); margin-bottom:8px; }
+  .jm-desc{ font-size:14px; line-height:1.65; color:var(--ink-soft); margin-bottom:24px; white-space:pre-line; }
+  .jm-apply{ display:block; text-align:center; background:var(--ink); color:var(--paper); font-weight:600; font-size:14.5px; padding:14px; border-radius:100px; margin-bottom:10px; }
+  .jm-apply:hover{ background:#0e1120; }
+  .jm-fine{ text-align:center; font-size:11.5px; color:var(--dark-45); }
+</style>
+</head>
+<body>
+
+<svg class="stars" id="stars"></svg>
+
+<!-- ============ SCREEN 0 — LANDING ============ -->
+<section class="screen active" id="screen-landing">
+  <div class="topbar"><div class="logo"><span class="dot"></span>WorkMatch</div></div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">90 seconds, 8 questions</div>
+      <h1>Find remote work that actually <em>fits</em> — not just whatever's open.</h1>
+      <p>Answer a few honest questions about your skills, hours, and what you actually need from a job. We match you against real, currently-open remote listings and show you exactly why each one fits.</p>
+      <button class="btn-primary" onclick="goTo('screen-q')">Find my matches →</button>
+      <div class="fineprint">Free to see your top matches. $2 one-time to unlock the full ranked list.</div>
+    </div>
+    <div class="how">
+      <h2>How it works</h2>
+      <div class="how-steps">
+        <div class="how-step"><div class="mark">1</div><div><h3>Tell us about you</h3><p>A short, conversational set of questions — work type, experience, skills, hours, location, what matters most.</p></div></div>
+        <div class="how-step"><div class="mark">2</div><div><h3>We check real openings</h3><p>Your answers get matched against currently-open remote listings, not a stale database.</p></div></div>
+        <div class="how-step"><div class="mark">3</div><div><h3>See your fit, not just a list</h3><p>Every match comes with a plain-English reason it fits you — pay, hours, region, experience level.</p></div></div>
+        <div class="how-step"><div class="mark">4</div><div><h3>Unlock everything, once</h3><p>Your top matches are free. Seeing every match and applying directly is a one-time $2 unlock — no subscription.</p></div></div>
+      </div>
+    </div>
+    <div style="padding:0 0 40px; font-size:11.5px; color:var(--ink-45); text-align:center;">
+      <a href="#" onclick="goTo('screen-legal'); return false;" style="color:var(--ink-70);">Terms &amp; Privacy</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 1 — INTERVIEW ============ -->
+<section class="screen" id="screen-q">
+  <div class="interview-shell">
+    <div class="flightpath">
+      <div class="topbar" style="padding:0 0 6px;"><div class="logo"><span class="dot"></span>WorkMatch</div></div>
+      <div class="flightpath-track">
+        <div class="flightpath-fill" id="ppFill" style="width:0%"></div>
+        <div class="flightpath-plane" id="ppPlane" style="left:0%">✈</div>
+      </div>
+      <div class="flightpath-meta"><span id="ppLabel">Question 1 of 9</span><span id="ppDest">Destination: your matches</span></div>
+    </div>
+    <div class="q-stage">
+      <div class="q-inner" id="qInner"><!-- injected by JS --></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 2 — MATCHING LOADER ============ -->
+<section class="screen" id="screen-matching">
+  <div class="matching">
+    <div class="radar"></div>
+    <h2>Finding your matches</h2>
+    <p id="matchingName">Checking open roles against your answers…</p>
+    <div class="step-log" id="matchLog">Scanning listings…</div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 3 — RESULTS ============ -->
+<section class="screen" id="screen-results">
+  <div class="results-shell">
+    <div class="topbar"><div class="logo"><span class="dot" style="background:var(--amber-dim)"></span>WorkMatch</div></div>
+    <div class="results-top">
+      <div class="eyebrow" style="color:#c98322">Your results</div>
+      <h2 id="resultsHeadline">We found jobs for you.</h2>
+      <p id="resultsSub">Based on your answers, here's what's open right now — and exactly why it fits.</p>
+    </div>
+    <div class="pass-list" id="passList"><!-- injected --></div>
+
+    <div class="locked-strip">
+      <h3>More matches, locked</h3>
+      <div class="locked-row" id="lockedRow"><!-- injected --></div>
+    </div>
+
+    <div class="more-cta">
+      <div class="more-card">
+        <h3 id="moreCount">Your profile matched more roles</h3>
+        <p>See every match, ranked and explained, with direct application links.</p>
+        <button class="btn-primary" onclick="goTo('screen-unlock')">Show me all my matches →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 4 — UNLOCK ============ -->
+<section class="screen" id="screen-unlock">
+  <div class="unlock-shell">
+    <div class="unlock-card">
+      <div class="eyebrow">One-time unlock</div>
+      <h2>Your full match list is ready.</h2>
+      <p class="lead" id="unlockLead">Here's what unlocking gets you — no subscription, no recurring charge.</p>
+
+      <div class="unlock-count">
+        <div class="n" id="unlockN">37</div>
+        <div class="lbl">total matches found for you</div>
+      </div>
+
+      <div class="unlock-list">
+        <div class="unlock-item"><div class="ic">✓</div>All <span id="unlockN2">37</span> matches, ranked by fit, with the same "why this fits" breakdown as your free results</div>
+        <div class="unlock-item"><div class="ic">✓</div>Direct apply links for every listing — no extra sign-ups on other sites</div>
+        <div class="unlock-item"><div class="ic">✓</div>Filter by pay, experience required, and region eligibility</div>
+        <div class="unlock-item"><div class="ic">✓</div>Your list stays saved — come back any time, it won't re-lock</div>
+      </div>
+
+      <div class="price-box">
+        <div class="p-left">
+          <div class="p-label">Unlock full results</div>
+          <div class="p-note">Pay once. Nothing recurs.</div>
+        </div>
+        <div class="p-amt">$2</div>
+      </div>
+
+      <div id="paypalButtonContainer" style="min-height:52px;"></div>
+      <div id="unlockMsg" style="font-size:12.5px; color:var(--teal); min-height:16px; margin:10px 0 14px;"></div>
+
+      <div class="unlock-fine">Pay with PayPal or, where available, debit/credit card — no PayPal account required for card payments where PayPal offers guest checkout. Charged once, today, in USD, via PayPal. After paying, enter your email below to unlock — WorkMatch's server never sees or stores your card details. No account or subscription created. All sales are final; see <a href="#" onclick="goTo('screen-legal'); return false;">Terms</a>.</div>
+
+      <!-- No password-based accounts anywhere on WorkMatch. The PayPal
+           Hosted Button above gives this page no completion signal on its
+           own (see the payment architecture note in the script below), so
+           this step is what actually unlocks WorkMatch — the backend
+           checks PayPal-verified purchases (via webhook) against the email
+           entered here, and only then issues an access token. Same-device
+           return visits after that still work automatically via the token
+           saved in localStorage (see restoreUnlockedState below). -->
+      <a class="back-link" href="#" id="restoreLink" onclick="toggleRestoreForm(); return false;" style="display:block; margin-top:12px;">Already paid? Click here to unlock</a>
+      <div id="restoreForm" style="display:none; margin-top:14px;">
+        <input type="email" id="restoreEmail" class="text-input" placeholder="Email you paid with" style="margin-bottom:10px;">
+        <button class="btn-unlock" style="padding:12px;" onclick="restoreAccess()">Unlock my matches</button>
+        <div id="restoreMsg" style="font-size:12.5px; color:var(--ink-45); min-height:16px; margin-top:8px;"></div>
+      </div>
+
+      <a class="back-link" href="#" onclick="goTo('screen-results'); return false;">← Back to my free matches</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 5 — FULL FEED ============ -->
+<section class="screen" id="screen-feed">
+  <div class="feed-shell">
+    <div class="topbar"><div class="logo"><span class="dot" style="background:var(--amber-dim)"></span>WorkMatch</div></div>
+    <div class="unlocked-banner"><div>✓ Unlocked — all matches below, saved to your list</div></div>
+    <div class="feed-top">
+      <h2 id="feedHeadline">Your remote job matches</h2>
+      <p id="feedCount">37 opportunities found</p>
+    </div>
+    <div class="filters">
+      <div class="filter-chip active" data-f="all" onclick="setFilter('all')">All</div>
+      <div class="filter-chip" data-f="match" onclick="setFilter('match')">Highest match</div>
+      <div class="filter-chip" data-f="pay" onclick="setFilter('pay')">Highest pay</div>
+      <div class="filter-chip" data-f="noexp" onclick="setFilter('noexp')">No experience</div>
+      <div class="filter-chip" data-f="worldwide" onclick="setFilter('worldwide')">Worldwide</div>
+    </div>
+    <div class="feed-list" id="feedList"><!-- injected --></div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 6 — TERMS & PRIVACY ============ -->
+<section class="screen" id="screen-legal">
+  <div class="results-shell">
+    <div class="topbar"><div class="logo"><span class="dot" style="background:var(--amber-dim)"></span>WorkMatch</div></div>
+    <div class="results-top" style="max-width:640px;">
+      <a href="#" onclick="goTo('screen-landing'); return false;" style="font-size:13px; color:var(--dark-45); display:inline-block; margin-bottom:18px;">← Back</a>
+      <h2 style="margin-bottom:22px;">Terms &amp; Privacy</h2>
+
+      <h3 style="font-size:15px; margin-bottom:8px;">What WorkMatch is</h3>
+      <p style="font-size:13.5px; color:var(--dark-70); line-height:1.7; margin-bottom:18px;">WorkMatch matches your answers against publicly listed open remote jobs and shows you the ones most likely to fit, with a plain-language reason why. Listings are sourced live via Jobicy's public jobs API; applying always takes you to the original posting to complete with the employer directly — we don't run our own application flow.</p>
+
+      <h3 style="font-size:15px; margin-bottom:8px;">Payment &amp; refunds</h3>
+      <p style="font-size:13.5px; color:var(--dark-70); line-height:1.7; margin-bottom:18px;">The $2 unlock is a one-time charge, processed through PayPal Checkout — you can pay with a PayPal account or, where PayPal makes it available for your location and card, as a guest with a debit/credit card. WorkMatch's server never sees or stores your card details; that's handled entirely by PayPal. Your unlock is verified and recorded by our server once PayPal confirms the payment, then saved to this device so it won't re-lock on return visits. Because this delivers instantly and in full, all sales are final; we don't offer refunds once the list is unlocked. If a charge failed or something's genuinely wrong on our end, contact us and we'll sort it out.</p>
+
+      <h3 style="font-size:15px; margin-bottom:8px;">Your data</h3>
+      <p style="font-size:13.5px; color:var(--dark-70); line-height:1.7; margin-bottom:18px;">Your answers (name, work type, experience, skills, availability) are used only to fetch and rank job matches for you. They're stored in your browser on this device, not on a WorkMatch server or database, and aren't sold or shared with third parties. Payment details are handled entirely by PayPal under their own privacy policy.</p>
+
+      <h3 style="font-size:15px; margin-bottom:8px;">Job listings</h3>
+      <p style="font-size:13.5px; color:var(--dark-70); line-height:1.7; margin-bottom:18px;">Listings, pay ranges, and job details come from third-party employers via Jobicy and may change or close without notice. WorkMatch doesn't employ, vet, or guarantee any listed role — always use your own judgment when applying and sharing information with an employer.</p>
+
+      <p style="font-size:11.5px; color:var(--dark-45); text-align:center; margin-top:30px;">Live job listings via <a href="https://jobicy.com" target="_blank" rel="noopener" style="color:var(--dark-70);">Jobicy</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ JOB DETAIL MODAL ============ -->
+<div class="job-modal-backdrop" id="jobModalBackdrop" onclick="closeJobModal(event)">
+  <div class="job-modal" id="jobModalContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<script>
+/* ---------------- STARFIELD (subtle, cheap) ---------------- */
+(function(){
+  const svg = document.getElementById('stars');
+  const n = 60;
+  let html = '';
+  for(let i=0;i<n;i++){
+    const x = Math.random()*100, y = Math.random()*100, r = Math.random()*1.1+.3, o = Math.random()*.6+.2;
+    html += `<circle cx="${x}%" cy="${y}%" r="${r}" fill="#F1EEE4" opacity="${o}"/>`;
+  }
+  svg.innerHTML = html;
+})();
+
+/* ---------------- STATE ---------------- */
+const answers = { name:'', worktype:null, experience:null, skills:[], hours:null, location:null, priority:null };
+
+/* ---------------- LIVE JOBS: Jobicy public API ----------------
+   https://jobicy.com/jobs-rss-feed — free, no key/auth required.
+   Usage terms: credit Jobicy, and every apply action must link straight
+   to the original job URL from the feed (never a fake internal apply flow).
+   We honor that below — Apply/View buttons are real <a> tags to job.url,
+   and both the results and feed screens carry a "Jobs via Jobicy" credit. */
+const JOBICY_BASE = 'https://jobicy.com/api/v2/remote-jobs';
+
+// Maps each on-screen skill label to a real Jobicy category/keyword filter.
+const CATEGORY_QUERY = {
+  'Customer service':  { industry:'supporting' },
+  'Data entry':        { tag:'data entry' },
+  'Writing':           { tag:'writer' },
+  'AI / Data':         { industry:'data-science' },
+  'Virtual assistance':{ tag:'virtual assistant' },
+  'Marketing':         { industry:'marketing' },
+  'Design':            { industry:'design' },
+  'Technology':        { industry:'engineering' },
+};
+
+function jobicyUrl(params, count){
+  const q = new URLSearchParams();
+  q.set('count', count || 12);
+  if(params.industry) q.set('industry', params.industry);
+  if(params.geo) q.set('geo', params.geo);
+  if(params.tag) q.set('tag', params.tag);
+  return `${JOBICY_BASE}?${q.toString()}`;
+}
+
+// Fetches real, currently-open listings for one skill category and
+// normalizes them into the shape the rest of the app expects.
+async function fetchJobsForSkill(skillLabel){
+  const params = CATEGORY_QUERY[skillLabel] || { tag: skillLabel.toLowerCase() };
+  const res = await fetch(jobicyUrl(params, 12));
+  if(!res.ok) throw new Error(`Jobicy request failed (${res.status})`);
+  const data = await res.json();
+  return (data.jobs || []).map(j => ({
+    id: j.id != null ? j.id : (j.url || `${skillLabel}-${j.jobTitle}-${j.companyName}`),
+    title: (j.jobTitle || '').trim(),
+    company: (j.companyName || '').trim(),
+    url: j.url || '',                 // real posting — every Apply link points here
+    skill: skillLabel,
+    level: j.jobLevel || 'Any',
+    jobType: j.jobType || [],
+    // Deliberately NOT defaulted to "Remote" — a missing geo field means we
+    // genuinely don't know eligibility, not that it's open worldwide.
+    geo: j.jobGeo || '',
+    salaryMin: j.salaryMin || null,
+    salaryMax: j.salaryMax || null,
+    salaryCurrency: j.salaryCurrency || 'USD',
+    salaryPeriod: j.salaryPeriod || null,
+    pubDate: j.pubDate || null,
+    excerpt: j.jobExcerpt || j.jobDescription || '',
+    industry: j.jobIndustry || [],
+  }));
+}
+
+function formatSalary(job){
+  if(!job.salaryMin && !job.salaryMax) return 'Not disclosed';
+  const cur = job.salaryCurrency === 'USD' ? '$' : job.salaryCurrency + ' ';
+  const per = job.salaryPeriod === 'yearly' ? '/yr' : job.salaryPeriod === 'hourly' ? '/hr' : job.salaryPeriod ? '/'+job.salaryPeriod : '';
+  if(job.salaryMin && job.salaryMax) return `${cur}${job.salaryMin.toLocaleString()}–${cur}${job.salaryMax.toLocaleString()}${per}`;
+  return `${cur}${(job.salaryMin||job.salaryMax).toLocaleString()}${per}`;
+}
+
+const REGION_KEYWORDS = {
+  worldwide: ['anywhere','world','global'],
+  americas:  ['usa','u.s.','united states','canada','latam','brazil','mexico','america','argentina','chile','colombia'],
+  europe:    ['europe','uk','united kingdom','germany','france','spain','poland','netherlands','ireland','italy','portugal','eu only','eu-only','emea'],
+  africa:    ['africa','nigeria','kenya','egypt','south africa','ghana'],
+  apac:      ['asia','apac','australia','india','philippines','singapore','japan','new zealand','vietnam','indonesia'],
+};
+// Flat list used only to recognize that a geo string names a specific
+// country (so we can tell "country-restricted" apart from "region-restricted"
+// and "unknown"). Not exhaustive — anything not recognized falls back to
+// "unknown" rather than being guessed at.
+const KNOWN_COUNTRIES = [
+  'usa','united states','canada','mexico','brazil','argentina','chile','colombia','peru',
+  'uk','united kingdom','germany','france','spain','italy','poland','netherlands','ireland','portugal','sweden','norway','denmark','finland','belgium','austria','switzerland','romania','ukraine','greece',
+  'nigeria','kenya','egypt','south africa','ghana','morocco',
+  'india','philippines','singapore','japan','china','australia','new zealand','vietnam','indonesia','pakistan','bangladesh','malaysia','thailand','south korea',
+];
+
+// Classifies a job's raw jobGeo string into one of four honest buckets.
+// This drives both the eligibility badge and the score — we never assume
+// a "remote" job is open worldwide just because it says "remote".
+function classifyGeo(geoRaw){
+  const g = (geoRaw||'').toLowerCase().trim();
+  if(!g) return { type:'unknown', label:'Not specified' };
+  if(REGION_KEYWORDS.worldwide.some(k=>g.includes(k))) return { type:'worldwide', label:geoRaw };
+  if(KNOWN_COUNTRIES.some(c=>g.includes(c))) return { type:'country', label:geoRaw };
+  for(const region of ['americas','europe','africa','apac']){
+    if(REGION_KEYWORDS[region].some(k=>g.includes(k))) return { type:'region', region, label:geoRaw };
+  }
+  return { type:'unknown', label:geoRaw };
+}
+
+function geoMatchesAnswer(geo){
+  const g = (geo||'').toLowerCase();
+  if(REGION_KEYWORDS.worldwide.some(k=>g.includes(k))) return true;
+  const kws = REGION_KEYWORDS[answers.location];
+  return kws ? kws.some(k=>g.includes(k)) : false;
+}
+
+// Full location-eligibility read: worldwide / region-match / country-match /
+// unknown-so-can't-say. `eligible` is true/false/null (null = genuinely
+// can't tell from the data we have).
+function locationScore(job, prof){
+  const geo = classifyGeo(job.geo);
+  if(geo.type === 'worldwide'){
+    return { score:1, eligible:true, geo, note:'Open worldwide, no location restriction' };
+  }
+  if(geo.type === 'country'){
+    const uc = (prof.country||'').toLowerCase().trim();
+    if(uc && geo.label.toLowerCase().includes(uc)){
+      return { score:1, eligible:true, geo, note:`Restricted to ${job.geo}, which matches the country you told us` };
+    }
+    if(uc){
+      return { score:0.1, eligible:false, geo, note:`Restricted to ${job.geo} — doesn't match the country you gave us` };
+    }
+    return { score:0.4, eligible:null, geo, note:"Check the employer's requirements." };
+  }
+  if(geo.type === 'region'){
+    const matches = geoMatchesAnswer(job.geo);
+    if(matches) return { score:1, eligible:true, geo, note:`Open to your selected region (${job.geo})` };
+    return { score:0.25, eligible:false, geo, note:`Restricted to ${job.geo}, outside the region you selected` };
+  }
+  return { score:0.5, eligible:null, geo, note:"Check the employer's requirements." };
+}
+/* ==========================================================================
+   WEIGHTED MATCHING ENGINE
+   Each factor returns a 0–1 compatibility score computed from real fields
+   on the Jobicy listing (title, jobLevel, jobType, jobGeo, salary,
+   excerpt/description) compared against the user's actual interview
+   profile. Nothing here is randomized or padded — a factor we have no
+   real signal for returns a neutral 0.5–0.6, never a manufactured high
+   score, and contributes proportionally less confidence rather than being
+   faked. See WEIGHTS below for how factors combine into the final %.
+   ========================================================================== */
+
+// Keywords used only to confirm a job's title/description genuinely reflects
+// the skill category it was fetched under (Jobicy's industry/tag filters are
+// sometimes loose) — never to invent a skill the listing doesn't mention.
+const SKILL_KEYWORDS = {
+  'Customer service':  ['customer', 'support', 'client', 'help desk', 'helpdesk'],
+  'Data entry':        ['data entry', 'data-entry', 'entry clerk', 'transcription'],
+  'Writing':           ['writer', 'writing', 'content', 'copywriter', 'editor'],
+  'AI / Data':         ['data scien', 'machine learning', ' ai ', 'analytics', 'analyst'],
+  'Virtual assistance':['virtual assistant', ' va ', 'admin', 'assistant'],
+  'Marketing':         ['marketing', 'growth', 'seo', 'campaign', 'demand gen'],
+  'Design':            ['design', ' ui', ' ux', 'figma', 'graphic'],
+  'Technology':        ['developer', 'engineer', 'software', 'programm', ' code'],
+};
+
+// Only filters jobs out when the USER explicitly flagged that dealbreaker in
+// the interview (profile.exclusions). Never applied speculatively.
+const EXCLUSION_KEYWORDS = {
+  coldcalling: /cold[\s-]?call|telemarketing|cold outreach/i,
+  commission:  /commission[\s-]?only|100%\s*commission|straight commission|uncapped commission/i,
+  phoneheavy:  /call cent(er|re)|inbound calls|outbound calls|heavy phone|phone-heavy|high call volume/i,
+  dataentry:   /data entry/i,
+};
+
+function jobText(job){
+  return `${job.title||''} ${job.excerpt||''} ${(job.industry||[]).join(' ')}`.toLowerCase();
+}
+
+function violatesExclusions(job, prof){
+  const text = jobText(job);
+  return (prof.exclusions||[]).some(ex => EXCLUSION_KEYWORDS[ex] ? EXCLUSION_KEYWORDS[ex].test(text) : false);
+}
+
+function skillsScore(job, prof){
+  // job.skill is guaranteed to be one of the user's picked skills — it's
+  // the category we queried Jobicy under. Baseline reflects that real
+  // category match; the bonus checks whether the title/description text
+  // actually backs it up rather than just a loose industry tag.
+  let score = 0.75;
+  const kws = SKILL_KEYWORDS[job.skill] || [];
+  const text = jobText(job);
+  if(kws.some(k=>text.includes(k))) score = 1;
+  const sec = (prof.secondarySkills||[]).filter(s=>s && s!=='none');
+  if(sec.length && sec.some(s=>text.includes(String(s).toLowerCase()))) score = Math.min(1, score+0.05);
+  return score;
+}
+
+function experienceScore(job, prof){
+  const l = (job.level||'').toLowerCase();
+  if(!l || l==='any') return 0.8; // no restriction stated — genuinely open to anyone
+  if(prof.experienceLevel==='any') return 0.7;
+  const wantsEntry = prof.experienceLevel==='no' || prof.experienceLevel==='entry';
+  const wantsSenior = prof.experienceLevel==='exp';
+  if(wantsEntry) return /entry|junior/.test(l) ? 1 : (/mid/.test(l) ? 0.3 : 0.15);
+  if(wantsSenior) return /senior|lead|director|manager/.test(l) ? 1 : (/mid/.test(l) ? 0.75 : (/entry|junior/.test(l) ? 0.4 : 0.5));
+  return 0.5;
+}
+
+function workTypeScore(job, prof){
+  if(!job.jobType || !job.jobType.length) return 0.55; // not stated — neutral, not assumed
+  if(prof.workStyle==='any') return 1;
+  const map = { fulltime:'full-time', parttime:'part-time', freelance:'freelance' };
+  const want = map[prof.workStyle];
+  if(!want) return 0.55;
+  return job.jobType.some(t=>t.toLowerCase().includes(want)) ? 1 : 0.2;
+}
+
+function availabilityScore(job, prof){
+  const avail = prof.availability;
+  const types = (job.jobType||[]).map(t=>t.toLowerCase());
+  if(!avail || !types.length) return 0.55;
+  const isFull = types.some(t=>t.includes('full-time'));
+  const isPart = types.some(t=>t.includes('part-time'));
+  const isFree = types.some(t=>t.includes('freelance'));
+  if(avail==='full')  return isFull ? 1 : (isPart||isFree ? 0.65 : 0.55);
+  if(avail==='2030')  return isPart||isFree ? 1 : (isFull ? 0.35 : 0.55);
+  if(avail==='1020')  return isPart||isFree ? 0.9 : (isFull ? 0.15 : 0.5);
+  if(avail==='u10')   return isFree ? 0.85 : (isPart ? 0.45 : (isFull ? 0.1 : 0.4));
+  return 0.55;
+}
+
+// Parses a loose free-text pay expectation like "$15/hr" or "2000/month"
+// into a rough amount + unit. Returns null when it can't confidently parse
+// one — we never guess a number the user didn't give us.
+function parseExpectedRate(text){
+  if(!text) return null;
+  const m = String(text).match(/([\d,]+(?:\.\d+)?)\s*(k)?/i);
+  if(!m) return null;
+  let amount = parseFloat(m[1].replace(/,/g,''));
+  if(isNaN(amount)) return null;
+  if(m[2]) amount *= 1000;
+  const hourly = /\/?\s*hr|hour/i.test(text);
+  return { amount, hourly };
+}
+
+function compensationScore(job, prof){
+  if(!job.salaryMin && !job.salaryMax) return 0.5; // undisclosed — neutral, not penalized or rewarded
+  const exp = parseExpectedRate(prof.payExpectation);
+  if(!exp) return prof.payPriority==='pay' ? 0.75 : 0.6;
+  const jobHourly = job.salaryPeriod === 'hourly';
+  let expAmount = exp.amount;
+  if(exp.hourly && !jobHourly) expAmount *= 2080;       // rough full-time-year conversion
+  if(!exp.hourly && jobHourly) expAmount /= 2080;
+  const jobHigh = job.salaryMax || job.salaryMin;
+  const jobLow = job.salaryMin || job.salaryMax;
+  if(jobHigh >= expAmount) return 1;
+  if(jobLow >= expAmount*0.8) return 0.55;
+  return 0.15;
+}
+
+function toolsScore(job, prof){
+  const tools = (prof.tools||[]).filter(t=>t && t!=='none');
+  if(!tools.length) return 0.55; // nothing stated — neutral
+  const text = jobText(job);
+  const firstWord = t => String(t).toLowerCase().split(/[\s(/]/)[0];
+  const hits = tools.filter(t=>text.includes(firstWord(t))).length;
+  return hits>0 ? Math.min(1, 0.5 + hits*0.25) : 0.4;
+}
+
+function priorityScore(job, prof){
+  const p = prof.payPriority;
+  if(!p || p==='any') return 0.55;
+  if(p==='pay')       return (job.salaryMin||job.salaryMax) ? 0.9 : 0.45;
+  if(p==='stability') return (job.jobType||[]).some(t=>/full-time/i.test(t)) ? 0.9 : 0.5;
+  if(p==='flex')      return (job.jobType||[]).some(t=>/freelance|part-time/i.test(t)) ? 0.9 : 0.5;
+  return 0.55;
+}
+
+/* Starting weights per the brief were Skills 30 / Experience 15 / Location 15
+   / Work type 10 / Availability 10 / Work style 5 / Tools 5 / Priority 5 /
+   Compensation 5. Jobicy listings carry no field describing communication
+   style, pace, or team culture, so a "work style" factor scored against
+   real job data would just be noise dressed up as signal — instead of
+   faking it, that 5% is folded into Compensation (5→10%), which we CAN
+   read honestly off salaryMin/salaryMax when disclosed. Everything else
+   matches the brief exactly. */
+const WEIGHTS = { skills:0.30, experience:0.15, location:0.15, workType:0.10, availability:0.10, compensation:0.10, tools:0.05, priority:0.05 };
+
+function scoreJob(job, prof){
+  const loc = locationScore(job, prof);
+  const parts = {
+    skills: skillsScore(job, prof),
+    experience: experienceScore(job, prof),
+    location: loc.score,
+    workType: workTypeScore(job, prof),
+    availability: availabilityScore(job, prof),
+    compensation: compensationScore(job, prof),
+    tools: toolsScore(job, prof),
+    priority: priorityScore(job, prof),
+  };
+  let total = 0;
+  for(const k in WEIGHTS) total += parts[k] * WEIGHTS[k];
+  return { score: Math.max(1, Math.min(99, Math.round(total*100))), parts, loc };
+}
+
+function isSafeUrl(u){
+  if(!u) return false;
+  try{
+    const parsed = new URL(u, window.location.href);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  }catch(e){ return false; }
+}
+
+const WORKTYPE_PHRASE = { fulltime:'full-time', parttime:'part-time', freelance:'freelance', any:'flexible' };
+const EXPERIENCE_PHRASE = { no:'starting fresh, no experience yet', entry:'some experience already', exp:'solid experience under your belt', any:'a mix of experience levels' };
+const HOURS_PHRASE = { u10:'under 10 hours a week', '1020':'10–20 hours a week', '2030':'20–30 hours a week', full:'full-time hours' };
+
+/* ==========================================================================
+   ADAPTIVE INTERVIEW ENGINE
+   20 fixed "slots" walked in order. Three slots (expDetail, expNotes,
+   skillDetail) resolve to different question content depending on prior
+   answers — that's the adaptive branching. Every question writes into the
+   new structured `profile` object; questions the matching engine already
+   depends on (name/worktype/experience/skills/hours/location/priority) also
+   mirror into the legacy `answers` object so the existing matching/results/
+   payment code keeps working untouched.
+   ========================================================================== */
+
+const profile = {
+  name:'', primaryGoal:null, experienceLevel:null, experienceDescription:'',
+  skills:[], secondarySkills:[], tools:[], workStyle:null, communication:null,
+  availability:null, schedule:null, timezoneFlexibility:null, country:'',
+  region:null, equipment:null, payPriority:null, payExpectation:'',
+  environment:null, exclusions:[], additionalNotes:''
+};
+
+// per-skill adaptive follow-up content for the "specific areas of expertise" slot
+const SKILL_BRANCHES = {
+  'Customer service': { tag:'Customer service', text:'When it comes to customer service, what have you actually done?', sub:'Pick everything that applies.',
+    opts:[['phone','Phone support / calls'],['chat','Live chat'],['email','Email support'],['complaints','Handling complaints or escalations'],['inperson','In-person / retail customer service'],['none','None of these specifically yet']] },
+  'Writing': { tag:'Writing', text:'What kind of writing have you actually done?', sub:'Pick everything that applies.',
+    opts:[['blog','Blog posts / articles'],['copy','Marketing or sales copy'],['technical','Technical writing / documentation'],['social','Social captions / short-form content'],['script','Scriptwriting'],['none','None of these specifically yet']] },
+  'Design': { tag:'Design', text:'Which design tools or areas do you actually know?', sub:'Pick everything that applies.',
+    opts:[['canva','Canva'],['photoshop','Photoshop'],['figma','Figma'],['illustrator','Illustrator'],['uiux','UI/UX design'],['branding','Branding / logo work'],['none','None of these specifically yet']] },
+  'Technology': { tag:'Technology', text:'What kind of tech work have you actually done?', sub:'Pick everything that applies.',
+    opts:[['programming','Programming / coding'],['itsupport','IT support / helpdesk'],['webdev','Web development'],['aitools','Working with AI tools'],['nocode','No-code tools (Webflow, Zapier, Bubble, etc.)'],['none','None of these specifically yet']] },
+  'Marketing': { tag:'Marketing', text:'Which parts of marketing have you actually done?', sub:'Pick everything that applies.',
+    opts:[['leadgen','Lead generation'],['social','Social media management'],['copy','Copywriting'],['email','Email marketing'],['sales','Sales calls / outreach'],['analytics','Analytics / reporting'],['none','None of these specifically yet']] },
+};
+const SKILL_BRANCH_DEFAULT = { tag:'Areas of expertise', text:'Anything specific within that you’re especially comfortable with?', sub:'Pick everything that applies — or skip if it’s all pretty new.',
+  opts:[['organizing','Organizing data / spreadsheets'],['research','Research'],['scheduling','Scheduling / calendar management'],['reporting','Reporting / summaries'],['none','Nothing specific yet']] };
+
+function describeInformal(vals){
+  const labels = { school:'school or class projects', volunteer:'volunteering', family:'helping a family/friend’s business',
+    selling:'selling things online', online:'online projects', freelance:'small freelance or gig work' };
+  const picked = (vals||[]).filter(v=>v!=='none').map(v=>labels[v]).filter(Boolean);
+  return picked.length ? `Relevant background: ${picked.join(', ')}.` : 'Starting fresh, no prior background listed.';
+}
+
+/* SLOTS[i] is either a static question object, or {id, resolve(profile,answers)}
+   for the three branch points. `id` is used as the storage key for the raw
+   answer so Back can restore selections. */
+const SLOTS = [
+  { id:'name', type:'text', tag:'Let’s start', text:"What should we call you?",
+    sub:'Just your first name — it helps us keep this feeling like a conversation, not a form.', placeholder:'Your first name',
+    apply:v=>{ answers.name=v; profile.name=v; } },
+
+  { id:'goal', type:'single', tag:'Your goal',
+    text:()=>`Nice to meet you, ${profile.name||'there'}. What are you hoping remote work gives you right now?`,
+    sub:'This shapes the kind of roles we’ll lead with.',
+    opts:[ ['income','More income / better pay'], ['flexibility','Flexibility — control over my own time'], ['stability','Stability — steady, reliable income'], ['learn','Experience — I’m building new skills'] ],
+    apply:v=>{ profile.primaryGoal=v; },
+    ack:v=>({income:'Chasing better pay',flexibility:'Flexibility matters most',stability:'Looking for stability',learn:'Here to build experience'}[v] || 'Got it') + ' — noted.' },
+
+  { id:'worktype', type:'single', tag:'Work type',
+    text:'What kind of work are you after — full-time, part-time, or something more freelance?',
+    sub:'This shapes what kind of listings we’ll even show you.',
+    opts:[ ['fulltime','Full-time'], ['parttime','Part-time'], ['freelance','Freelance / project-based'], ['any','I’m open, show me everything'] ],
+    apply:v=>{ answers.worktype=v; profile.workStyle=v; },
+    ack:v=>`${WORKTYPE_PHRASE[v]||'Remote'} work — noted.` },
+
+  { id:'experienceLevel', type:'single', tag:'Experience',
+    text:()=>`Looking for ${WORKTYPE_PHRASE[answers.worktype]||'remote'} work — how much experience do you have with that so far?`,
+    sub:'Be honest — we’ll only show you roles you actually qualify for.',
+    opts:[ ['no','None yet — I’d be starting fresh'], ['entry','Some — a few gigs or under a year'], ['exp','Experienced — a year or more'], ['any','Mixed / it depends on the role'] ],
+    apply:v=>{ answers.experience=v; profile.experienceLevel=v; },
+    ack:()=>'Thanks for being upfront about that.' },
+
+  { id:'expDetail',
+    resolve:(profile)=> profile.experienceLevel==='no' ? {
+      type:'multi', tag:'Your background',
+      text:'No formal job yet? Totally fine — what have you actually done? Pick whatever applies.',
+      sub:'None of this needs to be "official."',
+      opts:[ ['school','School or class projects'], ['volunteer','Volunteering'], ['family','Helping a family or friend’s business'], ['selling','Selling things online (Etsy, Depop, Marketplace, etc.)'], ['online','Online projects (blog, YouTube, social page, etc.)'], ['freelance','Small freelance or gig work'], ['none','Honestly, none of these yet'] ],
+      apply:vals=>{ profile.experienceDescription = describeInformal(vals); },
+      ack:()=>'Good to know — we’ll match on that instead of formal experience.'
+    } : {
+      type:'textarea', tag:'Your background',
+      text:'Tell us a little about the work you’ve done so far — roles, industries, whatever’s relevant.',
+      sub:'A sentence or two is plenty. Optional, but it helps us match you better.',
+      placeholder:'e.g. 2 years in retail customer service, then a year doing admin work remotely...',
+      skip:true,
+      apply:v=>{ profile.experienceDescription = v; },
+      ack:()=>'Thanks — that helps.'
+    } },
+
+  { id:'expNotes',
+    resolve:(profile)=> profile.experienceLevel==='no' ? {
+      type:'textarea', tag:'Anything else about that?', text:'Want to add any detail?', sub:'Totally optional — skip if you’d rather move on.',
+      placeholder:'Add any detail here...', skip:true,
+      apply:v=>{ if(v) profile.experienceDescription += (profile.experienceDescription ? ' ' : '') + v; }
+    } : {
+      type:'textarea', tag:'Side work', text:'Done any freelance, side projects, or informal work too?',
+      sub:'Optional — but it often shows initiative employers like seeing.',
+      placeholder:'e.g. I also do freelance logo design on the side...', skip:true,
+      apply:v=>{ if(v) profile.experienceDescription += (profile.experienceDescription ? ' Also: ' : '') + v; }
+    } },
+
+  { id:'skills', type:'multi', tag:'Your strengths', text:'Good to know. What are you good at?',
+    sub:'Pick up to 3 — we’ll pull real open listings for each one.',
+    opts:[ ['Customer service','Customer service'], ['Data entry','Data entry'], ['Writing','Writing'], ['AI / Data','AI / Data'], ['Virtual assistance','Virtual assistance'], ['Marketing','Marketing'], ['Design','Design'], ['Technology','Technology'] ], max:3,
+    apply:vals=>{ answers.skills=vals; profile.skills=vals; },
+    ack:vals=>`${(vals||[]).join(', ')} — we'll pull real listings for each.` },
+
+  { id:'skillDetail',
+    resolve:(profile)=>{
+      const branch = SKILL_BRANCHES[(profile.skills||[])[0]] || SKILL_BRANCH_DEFAULT;
+      return { type:'multi', tag:branch.tag, text:branch.text, sub:branch.sub, opts:branch.opts, skip:true,
+        apply:vals=>{ profile.secondarySkills = (vals||[]).filter(v=>v!=='none'); } };
+    } },
+
+  { id:'tools', type:'multi', tag:'Tools',
+    text:()=>{ const sk=(profile.skills||[])[0]; return sk ? `For ${sk.toLowerCase()} work, which of these do you already use comfortably?` : 'Which of these do you already use comfortably?'; },
+    sub:'Optional — it just helps us explain why a role fits once we find it.',
+    opts:[ ['Spreadsheets (Excel/Sheets)','Spreadsheets (Excel/Sheets)'], ['Google Workspace','Google Workspace'], ['Canva or similar design tools','Canva or similar design tools'], ['CRM software','CRM software'], ['Zoom / video calls','Zoom / video calls'], ['Slack or similar chat tools','Slack or similar chat tools'], ['Project tools (Trello, Asana, Notion)','Project tools (Trello, Asana, Notion)'], ['none','None of these yet — and that’s fine'] ], max:8, skip:true,
+    apply:vals=>{ answers.tools=vals; profile.tools=(vals||[]).filter(v=>v!=='none'); },
+    ack:()=>'Good, that helps.' },
+
+  { id:'communication', type:'single', tag:'How you work',
+    text:'How would you describe how you like to communicate and pick up new things on the job?', sub:'Pick whichever feels closest.',
+    opts:[ ['independent','I figure things out myself and check in only when needed'], ['guided','I like clear instructions and regular check-ins while I learn'], ['handson','I learn best with a call or live walkthrough, not just docs'], ['depends','Depends on the task — I adapt either way'] ],
+    apply:v=>{ profile.communication = { independent:'Works independently, learns fast with minimal guidance', guided:'Likes clear instructions and regular check-ins', handson:'Prefers hands-on/live walkthroughs over docs', depends:'Adapts communication style to the task' }[v] || v; },
+    ack:()=>'Good to know.' },
+
+  { id:'availability', type:'single', tag:'Availability',
+    text:()=>{ const sk=(profile.skills||[])[0]; return `How many hours a week can you realistically put toward ${sk ? sk.toLowerCase()+' work' : 'this'}?`; },
+    sub:'No point showing you a full-time job if you’ve only got 10 hours to spare.',
+    opts:[ ['u10','Under 10 hrs/week'], ['1020','10–20 hrs/week'], ['2030','20–30 hrs/week'], ['full','Full-time (30+ hrs/week)'] ],
+    apply:v=>{ answers.hours=v; profile.availability=v; },
+    ack:v=>`${HOURS_PHRASE[v]} — noted.` },
+
+  { id:'workingHours', type:'single', tag:'Working hours', text:'And when it comes to hours — what actually works for you?', sub:'Pick the closest match.',
+    opts:[ ['fixed_own','Fixed hours, and it needs to be in my own timezone'], ['fixed_flex','Fixed hours are fine, but timezone doesn’t matter much'], ['flexible','Flexible / async — whenever works for me'], ['shifts','Open to shifts, including evenings or nights, if it pays well'] ],
+    apply:v=>{ const m={ fixed_own:{schedule:'fixed',timezoneFlexibility:'must-match'}, fixed_flex:{schedule:'fixed',timezoneFlexibility:'flexible'}, flexible:{schedule:'flexible',timezoneFlexibility:'flexible'}, shifts:{schedule:'shift-based',timezoneFlexibility:'flexible'} }[v] || {}; profile.schedule=m.schedule||v; profile.timezoneFlexibility=m.timezoneFlexibility||null; },
+    ack:()=>'Got it.' },
+
+  { id:'country', type:'text', tag:'Location', text:'What country are you currently based in?',
+    sub:'Optional — some roles are restricted by country, so this keeps your matches realistic.', placeholder:'e.g. Eswatini, Nigeria, Philippines...', skip:true,
+    apply:v=>{ profile.country=v; } },
+
+  { id:'region', type:'single', tag:'Geographic flexibility', text:'And where can you actually work from, in terms of listings?',
+    sub:'Some listings are open worldwide, others are restricted by country or region.',
+    opts:[ ['worldwide','🌍 Worldwide — no restrictions'], ['americas','🌎 Americas'], ['europe','🌍 Europe'], ['africa','🌍 Africa'], ['apac','🌏 Asia-Pacific'], ['mycountry','📍 My country only'] ],
+    apply:v=>{ answers.location=v; profile.region=v; },
+    ack:()=>'Got your region.' },
+
+  { id:'equipment', type:'single', tag:'Work setup', text:'Do you have a reliable computer and internet connection to work remotely?',
+    sub:'No wrong answer — just helps us flag roles that need a specific setup.',
+    opts:[ ['ready','Yes, fully set up and reliable'], ['okish','I have a laptop, but internet can be spotty'], ['sorting','I need to sort a few things out first'], ['unsure','Not sure yet'] ],
+    apply:v=>{ profile.equipment=v; } },
+
+  { id:'payPriority', type:'single', tag:'Pay', text:'When it comes to pay, what matters most to you?',
+    sub:'This is what we’ll weigh most heavily when we rank your matches.',
+    opts:[ ['pay','The highest rate I can get'], ['stability','Steady, predictable pay over time'], ['flex','Enough to get by — flexibility matters more'], ['any','Not fussed yet — I just want to start'] ],
+    apply:v=>{ answers.priority=v; profile.payPriority=v; },
+    ack:()=>'Got it — that’s how we’ll rank things.' },
+
+  { id:'payExpectation', type:'text', tag:'Pay expectation', text:'Is there a minimum rate that would make a role worth your time?',
+    sub:'Optional — totally fine to skip this.', placeholder:'e.g. $15/hr, $2,000/month...', skip:true,
+    apply:v=>{ profile.payExpectation=v; } },
+
+  { id:'environment', type:'single', tag:'Environment', text:'What kind of environment do you do your best work in?', sub:'Pick whichever fits best.',
+    opts:[ ['quiet','Quiet and independent'], ['social','Collaborative and social'], ['structured','Structured, with clear tasks'], ['flexible','Flexible — figure it out as I go'] ],
+    apply:v=>{ profile.environment = { quiet:'Quiet, independent work', social:'Collaborative, social environment', structured:'Structured with clear tasks', flexible:'Flexible, self-directed' }[v] || v; } },
+
+  { id:'exclusions', type:'multi', tag:'Deal-breakers', text:'Anything you’d rather we filter out?',
+    sub:'Pick everything that applies — or skip if you’re open to anything.',
+    opts:[ ['coldcalling','Cold calling'], ['commission','Commission-only sales'], ['phoneheavy','Heavy phone work'], ['dataentry','Repetitive data entry'], ['none','I don’t mind anything'] ], skip:true,
+    apply:vals=>{ profile.exclusions = (vals||[]).filter(v=>v!=='none'); } },
+
+  { id:'additionalNotes', type:'textarea', tag:'Last thing',
+    text:()=> profile.name ? `Last thing, ${profile.name} — anything else you'd like us to know?` : "Last thing — anything else you'd like us to know?",
+    sub:'Optional — totally up to you.', placeholder:'Anything at all...', skip:true,
+    apply:v=>{ profile.additionalNotes=v; } },
+];
+
+let qIndex = 0;
+let multiTemp = [];
+const rawAnswers = {}; // per-slot raw value, keyed by SLOTS[i].id — powers "edit previous answers" on Back
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getQuestion(i){
+  const slot = SLOTS[i];
+  if(slot.resolve){
+    const q = slot.resolve(profile, answers);
+    q.id = slot.id;
+    return q;
+  }
+  slot.id = slot.id || slot.key;
+  return slot;
+}
+
+function renderQuestion(){
+  const q = getQuestion(qIndex);
+  const inner = document.getElementById('qInner');
+  const label = typeof q.text === 'function' ? q.text(profile, answers) : q.text;
+  const prior = rawAnswers[q.id];
+
+  document.getElementById('ppLabel').textContent = `Question ${qIndex+1} of ${SLOTS.length}`;
+  const pct = (qIndex)/(SLOTS.length-1)*100;
+  document.getElementById('ppFill').style.width = pct+'%';
+  document.getElementById('ppPlane').style.left = pct+'%';
+
+  let optsHtml = '';
+  if(q.type === 'text'){
+    optsHtml = `<input class="text-input" id="textAns" type="text" placeholder="${escapeHtml(q.placeholder)}" autocomplete="off" value="${escapeHtml(prior)}" oninput="onTextInput(this.value)">`;
+  } else if(q.type === 'textarea'){
+    optsHtml = `<textarea class="text-input" id="textAns" rows="3" placeholder="${escapeHtml(q.placeholder)}" oninput="onTextInput(this.value)" style="resize:vertical;">${escapeHtml(prior)}</textarea>`;
+  } else if(q.type === 'single'){
+    optsHtml = `<div class="opt-grid">` + q.opts.map(([val,label2])=>
+      `<button class="opt round${prior===val?' selected':''}" data-val="${val}" onclick="selectSingle('${val}')"><span>${label2}</span><span class="check">${prior===val?'✓':''}</span></button>`
+    ).join('') + `</div>`;
+  } else if(q.type === 'multi'){
+    optsHtml = `<div class="opt-grid cols-2">` + q.opts.map(([val,label2])=>
+      `<button class="opt${prior && prior.includes(val) ? ' selected':''}" data-val="${val}" onclick="toggleMulti('${val}')"><span>${label2}</span><span class="check">${prior && prior.includes(val) ? '✓':''}</span></button>`
+    ).join('') + `</div>`;
+  }
+
+  inner.innerHTML = `
+    <div class="q-tag">${q.tag}</div>
+    <div class="ack" id="ackLine"></div>
+    <div class="q-text">${label}</div>
+    <div class="q-sub">${q.sub||''}</div>
+    ${optsHtml}
+    <div class="q-actions">
+      ${qIndex>0 ? `<button class="btn-back" onclick="prevQ()">← Back</button>` : ''}
+      <button class="btn-next" id="nextBtn" onclick="nextQ()">Continue →</button>
+    </div>
+  `;
+
+  multiTemp = q.type==='multi' ? (prior ? prior.slice() : []) : null;
+  const hasValue = q.type==='multi' ? (multiTemp.length>0) : q.type==='text'||q.type==='textarea' ? !!(prior && prior.trim()) : !!prior;
+  document.getElementById('nextBtn').classList.toggle('ready', q.skip || hasValue);
+  showAck();
+}
+
+function showAck(){
+  const line = document.getElementById('ackLine');
+  if(qIndex===0){ line.textContent=''; return; }
+  const prevQ_ = getQuestion(qIndex-1);
+  const prevVal = rawAnswers[prevQ_.id];
+  line.textContent = (prevVal!==undefined && prevQ_.ack) ? prevQ_.ack(prevVal) : (prevVal!==undefined ? 'Got it.' : '');
+}
+
+function selectSingle(val){
+  document.querySelectorAll('.opt.round').forEach(b=>b.classList.remove('selected'));
+  const btn = document.querySelector(`.opt.round[data-val="${val}"]`);
+  btn.classList.add('selected');
+  btn.querySelector('.check').textContent = '✓';
+  const q = getQuestion(qIndex);
+  rawAnswers[q.id] = val;
+  q.apply(val);
+  document.getElementById('nextBtn').classList.add('ready');
+  setTimeout(nextQ, 320);
+}
+
+function toggleMulti(val){
+  const q = getQuestion(qIndex);
+  const btn = document.querySelector(`.opt[data-val="${val}"]`);
+  const isSel = btn.classList.contains('selected');
+  if(val==='none'){
+    document.querySelectorAll('.opt').forEach(b=>{b.classList.remove('selected'); b.querySelector('.check').textContent='';});
+    multiTemp = isSel ? [] : ['none'];
+    btn.classList.toggle('selected', !isSel);
+    btn.querySelector('.check').textContent = isSel ? '' : '✓';
+  } else {
+    if(multiTemp.includes('none')){
+      const noneBtn = document.querySelector('.opt[data-val="none"]');
+      if(noneBtn){ noneBtn.classList.remove('selected'); noneBtn.querySelector('.check').textContent=''; }
+      multiTemp = multiTemp.filter(v=>v!=='none');
+    }
+    if(isSel){
+      multiTemp = multiTemp.filter(v=>v!==val);
+      btn.classList.remove('selected'); btn.querySelector('.check').textContent='';
+    } else {
+      if(q.max && multiTemp.length>=q.max){ return; }
+      multiTemp.push(val);
+      btn.classList.add('selected'); btn.querySelector('.check').textContent='✓';
+    }
+  }
+  rawAnswers[q.id] = multiTemp.slice();
+  q.apply(multiTemp.slice());
+  document.getElementById('nextBtn').classList.toggle('ready', multiTemp.length>0 || q.skip);
+}
+
+function onTextInput(v){
+  const q = getQuestion(qIndex);
+  rawAnswers[q.id] = v;
+  q.apply(v.trim());
+  document.getElementById('nextBtn').classList.toggle('ready', q.skip || v.trim().length>0);
+}
+
+function nextQ(){
+  const q = getQuestion(qIndex);
+  const prior = rawAnswers[q.id];
+  const hasValue = q.type==='multi' ? (prior && prior.length>0) : q.type==='text'||q.type==='textarea' ? !!(prior && prior.trim()) : !!prior;
+  if(!q.skip && !hasValue) return; // guard against Enter/edge-case submits on required, unanswered questions
+
+  if(qIndex < SLOTS.length-1){
+    qIndex++;
+    renderQuestion();
+  } else {
+    runMatching();
+  }
+}
+function prevQ(){
+  if(qIndex>0){ qIndex--; renderQuestion(); }
+}
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='screen-q') renderQuestion();
+  if(id==='screen-unlock') ensurePayPalButtonsReady();
+}
+
+/* ---------------- MATCH EXPLANATIONS ----------------
+   Every line here is gated on an actual score component clearing a real
+   threshold, or an actual field on the job (level/type/geo/salary) — never
+   a generic filler line. If nothing clears the bar we still say something
+   true (e.g. "location eligibility unclear"), never invent a reason. */
+function reasonsFor(job, prof){
+  const r = [];
+  const kws = SKILL_KEYWORDS[job.skill] || [];
+  const text = jobText(job);
+  if(kws.some(k=>text.includes(k))) r.push(`the listing itself is genuinely about ${job.skill.toLowerCase()}, not just tagged that way`);
+  else r.push(`matches your ${job.skill.toLowerCase()} skill category`);
+
+  if(job.level && job.level.toLowerCase()!=='any' && experienceScore(job, prof) >= 0.9){
+    r.push(`accepts ${job.level.toLowerCase()}-level candidates, matching your experience`);
+  } else if((!job.level || job.level.toLowerCase()==='any')){
+    r.push(`open to any experience level`);
+  }
+
+  if(job.jobType && job.jobType.length && workTypeScore(job, prof) >= 0.9){
+    r.push(`it's ${job.jobType.join('/').toLowerCase()}, the work type you asked for`);
+  }
+
+  const loc = job._loc || locationScore(job, prof);
+  if(loc.geo.type==='worldwide') r.push('open worldwide, no location restriction');
+  else if(loc.eligible === true) r.push(`open to your location (${escapeHtml(job.geo)})`);
+  else if(loc.eligible === false) r.push(`restricted to ${escapeHtml(job.geo)} — likely outside where you can work, so weighted down`);
+  else r.push("location eligibility unclear from the listing — check the employer's requirements");
+
+  if((job.salaryMin || job.salaryMax) && compensationScore(job, prof) >= 0.9){
+    r.push(`disclosed pay (${formatSalary(job)}) meets what you told us you need`);
+  }
+
+  return r.slice(0,3);
+}
+
+let matchedList = [];
+let excludedCount = 0;
+let fetchFailed = false;
+
+async function runMatching(){
+  goTo('screen-matching');
+  document.getElementById('matchingName').textContent = `Checking live listings against ${answers.name || 'your'} answers…`;
+  const logs = ['Querying open listings…','Checking eligibility by region…','Comparing against your skills…','Filtering out your dealbreakers…','Ranking by fit…'];
+  let li=0;
+  const logEl = document.getElementById('matchLog');
+  const iv = setInterval(()=>{ logEl.textContent = logs[li%logs.length]; li++; }, 550);
+
+  fetchFailed = false;
+  excludedCount = 0;
+  try{
+    const skills = (answers.skills && answers.skills.length) ? answers.skills : ['Virtual assistance'];
+    const results = await Promise.all(skills.map(s => fetchJobsForSkill(s).catch(()=>[])));
+    const seen = new Set();
+    const combined = [];
+    results.flat().forEach(j=>{
+      // Drop anything missing the fields we can't honestly display or
+      // send someone to apply through — never fabricate a placeholder.
+      if(!j.title || !j.company || !isSafeUrl(j.url)) return;
+      const key = j.id != null ? `id:${j.id}` : `url:${j.url}`;
+      if(!seen.has(key)){ seen.add(key); combined.push(j); }
+    });
+    if(combined.length === 0) throw new Error('No usable listings returned');
+
+    const kept = [];
+    combined.forEach(j=>{
+      if(violatesExclusions(j, profile)){ excludedCount++; return; }
+      kept.push(j);
+    });
+    if(kept.length === 0) throw new Error('Every listing matched a stated dealbreaker');
+
+    matchedList = kept
+      .map(j=>{ const m = scoreJob(j, profile); return {...j, score:m.score, _parts:m.parts, _loc:m.loc}; })
+      .sort((a,b)=>b.score-a.score);
+  }catch(e){
+    fetchFailed = true;
+  }
+
+  clearInterval(iv);
+  if(fetchFailed){
+    renderFetchError();
+  } else {
+    renderResults();
+    goTo('screen-results');
+  }
+}
+
+function renderFetchError(){
+  const inner = document.getElementById('qInner');
+  goTo('screen-q');
+  document.querySelector('.matching h2').textContent = 'Finding your matches';
+  document.getElementById('screen-matching').classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!=='screen-matching') s.classList.remove('active'); });
+  document.getElementById('matchingName').textContent = "Couldn't reach live listings right now.";
+  document.getElementById('matchLog').innerHTML = `<button class="btn-primary" style="margin-top:14px;" onclick="runMatching()">Try again →</button>`;
+}
+
+function eligLabel(job){
+  const loc = job._loc || locationScore(job, profile);
+  if(loc.geo.type==='worldwide') return 'Open worldwide';
+  if(loc.eligible===true) return 'Open to your location';
+  if(loc.eligible===false) return 'Likely restricted — check listing';
+  return "Check the employer's requirements";
+}
+
+function renderResults(){
+  // Show as many top picks as we actually have (never pad to a fixed number).
+  const topCount = Math.min(3, matchedList.length);
+  const top3 = matchedList.slice(0, topCount);
+  const rest = matchedList.slice(topCount);
+
+  document.getElementById('resultsHeadline').textContent = answers.name ? `Nice work, ${answers.name}. Here's what we found.` : `We found jobs for you.`;
+
+  document.getElementById('passList').innerHTML = top3.map(job=>`
+    <div class="pass" onclick="openJobModal('${escapeHtml(job.id)}')">
+      <div class="pass-main">
+        <div class="pass-row1">
+          <span class="pass-match">${job.score}% match</span>
+          <span class="pass-elig">${escapeHtml(eligLabel(job))}</span>
+        </div>
+        <div class="pass-title">${escapeHtml(job.title)}</div>
+        <div class="pass-meta"><span>${escapeHtml(job.company)}</span><span>💰 ${escapeHtml(formatSalary(job))}</span><span>🌍 ${escapeHtml(job.geo||'Not specified')}</span></div>
+        <div class="pass-why">Why it fits: ${reasonsFor(job, profile).map(r=>'<b>·</b> '+escapeHtml(r)).join('&nbsp;&nbsp;')}</div>
+        <a class="apply-btn" href="${escapeHtml(job.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:block; text-align:center;">View &amp; apply →</a>
+      </div>
+      <div class="pass-stub">
+        <div class="big">${job.score}%</div>
+        <div class="lbl">match</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('lockedRow').innerHTML = rest.slice(0,4).map(job=>`
+    <div class="locked-card">
+      <div class="lk-left">
+        <div class="lk-title">${escapeHtml(job.title)}</div>
+        <div class="lk-meta">${job.score}% match · ${escapeHtml(formatSalary(job))}</div>
+      </div>
+      <div class="lk-lock">🔒</div>
+    </div>
+  `).join('');
+
+  const total = matchedList.length;
+  document.getElementById('moreCount').textContent = total > topCount
+    ? `Your profile matched ${total} open role${total===1?'':'s'} — you're seeing ${topCount}`
+    : `Your profile matched ${total} open role${total===1?'':'s'} — that's everything currently open for you`;
+  document.getElementById('unlockN').textContent = total;
+  document.getElementById('unlockN2').textContent = total;
+  document.getElementById('feedCount').textContent = `${total} opportunit${total===1?'y':'ies'} found — live from Jobicy${excludedCount ? ` (${excludedCount} filtered out for matching your stated dealbreakers)` : ''}`;
+}
+
+/* ---------------- PAYMENT (PayPal Hosted Button) ----------------
+   Uses the real PayPal Hosted Button (hostedButtonId XXL79KTWWZ6B8,
+   configured server-side in the PayPal dashboard at $2.00 USD, one-time).
+
+   This page never decides the price, never sees the PayPal Client Secret,
+   and never unlocks anything on its own — it only renders PayPal's button
+   and, separately, asks the backend whether a completed purchase exists
+   for an email the buyer confirms.
+
+   IMPORTANT ARCHITECTURAL NOTE: the plain paypal.HostedButtons(...).render()
+   embed below gives no onApprove/orderID/completion signal in the browser
+   — that's how PayPal ships it. So unlocking here does NOT happen from
+   anything this page observes about the checkout. It happens because:
+     1. PayPal sends a PAYMENT.CAPTURE.COMPLETED webhook to the backend
+        when the $2 payment actually completes (see /api/paypal/webhook on
+        the backend — verified against PayPal's signature, not trusted
+        blindly), and the backend records that purchase against the
+        payer's email.
+     2. After using the button, the buyer confirms the email they paid
+        with here, and the frontend asks the backend if a completed
+        purchase exists for it. If PayPal's webhook hasn't landed yet
+        (webhook delivery isn't instant, and PayPal's own docs note it can
+        occasionally be delayed), this polls for a short window instead of
+        failing immediately.
+   This means unlock is genuinely gated on a server-verified PayPal event,
+   never on anything the browser alone can produce — but it also means
+   there's a brief window after paying, and a small honesty gap: WorkMatch
+   can only unlock the person who happens to know/enter the paying email,
+   not verify it's really them the way a login would.
+
+   Backend contract this page assumes (none of this lives in this repo —
+   this file is frontend only):
+     GET  /api/config              -> { paypalClientId, currency }
+     POST /api/access/verify       { accessToken } -> { valid }
+     POST /api/access/restore      { email } -> { success, accessToken }
+          Looks up a COMPLETED purchase recorded via the webhook and, if
+          found, mints a signed access token. This is the only path that
+          unlocks WorkMatch — there is no client-side unlock path. */
+const API_BASE = '';
+const PAYPAL_HOSTED_BUTTON_ID = 'XXL79KTWWZ6B8';
+
+async function apiPost(path, body){
+  const res = await fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {})
+  });
+  let data = {};
+  try{ data = await res.json(); }catch(e){ /* non-JSON error body */ }
+  if(!res.ok){
+    const err = new Error(data.error || `Request to ${path} failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+let paypalButtonRendered = false;
+
+async function initPayPalHostedButton(){
+  const msg = document.getElementById('unlockMsg');
+  const container = document.getElementById('paypalButtonContainer');
+  if(paypalButtonRendered || !container) return;
+
+  try{
+    const config = await (await fetch(API_BASE + '/api/config')).json();
+    if(!config.paypalClientId){
+      container.innerHTML = '';
+      msg.textContent = 'Payments aren’t configured yet — the site owner needs to set PAYPAL_CLIENT_ID on the backend.';
+      return;
+    }
+
+    await loadPayPalHostedButtonSdk(config.paypalClientId);
+
+    if(!window.paypal || !window.paypal.HostedButtons){
+      msg.textContent = 'Couldn’t load PayPal checkout. Refresh and try again.';
+      return;
+    }
+
+    container.id = `paypal-container-${PAYPAL_HOSTED_BUTTON_ID}`;
+    window.paypal.HostedButtons({
+      hostedButtonId: PAYPAL_HOSTED_BUTTON_ID
+    }).render(`#paypal-container-${PAYPAL_HOSTED_BUTTON_ID}`);
+
+    paypalButtonRendered = true;
+
+    // No onApprove exists for Hosted Buttons, so this is the closest signal
+    // this page gets that the buyer is mid-checkout: opening the button's
+    // popup is a user gesture we can at least react to by priming the
+    // restore-by-email prompt open, since that's what actually finishes
+    // the unlock once they're back.
+    container.addEventListener('click', () => {
+      const form = document.getElementById('restoreForm');
+      if(form && form.style.display === 'none'){
+        document.getElementById('restoreLink').textContent = 'Finished paying? Confirm your email to unlock';
+      }
+    }, { once: true });
+  }catch(e){
+    msg.textContent = 'Couldn’t load PayPal checkout right now. Please try again shortly.';
+  }
+}
+
+function loadPayPalHostedButtonSdk(clientId){
+  return new Promise((resolve, reject) => {
+    if(window.paypal && window.paypal.HostedButtons){ resolve(); return; }
+    const script = document.createElement('script');
+    const params = new URLSearchParams({
+      'client-id': clientId,
+      components: 'hosted-buttons',
+      'disable-funding': 'venmo',
+      currency: 'USD'
+    });
+    script.src = `https://www.paypal.com/sdk/js?${params.toString()}`;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
+    document.head.appendChild(script);
+  });
+}
+
+// Called once, when the unlock screen is shown, so we don't load the SDK
+// or hit the backend until the buyer is actually looking at the paywall.
+function ensurePayPalButtonsReady(){
+  initPayPalHostedButton();
+}
+
+const WORKMATCH_STATE_VERSION = 4; // bumped — unlocked state now requires a backend-issued, backend-verified PayPal access token instead of a bare localStorage flag; pre-PayPal saves are discarded.
+
+// accessToken is the actual proof of payment (a signed token only the backend
+// can mint, issued after a verified PayPal capture). matchedList/answers/profile
+// are just a UX cache so a returning, already-verified buyer doesn't need to
+// re-run the questionnaire — they carry no authority on their own.
+function saveUnlockedState(accessToken){
+  try{
+    localStorage.setItem('workmatch_unlocked', JSON.stringify({
+      v: WORKMATCH_STATE_VERSION, accessToken, answers, profile, matchedList, ts: Date.now()
+    }));
+  }catch(e){ /* storage unavailable — unlock still works this session */ }
+}
+
+// Re-checks the saved access token against the backend on every load. A
+// tampered or fabricated token (e.g. someone hand-editing localStorage in
+// DevTools) fails signature verification server-side and access is not restored.
+async function restoreUnlockedState(){
+  try{
+    const raw = localStorage.getItem('workmatch_unlocked');
+    if(!raw) return false;
+    const saved = JSON.parse(raw);
+    if(!saved || saved.v !== WORKMATCH_STATE_VERSION || !saved.accessToken || !saved.matchedList || !saved.matchedList.length){
+      localStorage.removeItem('workmatch_unlocked'); // stale/incompatible/tampered save — drop it instead of loading it broken
+      return false;
+    }
+
+    const check = await apiPost('/api/access/verify', { accessToken: saved.accessToken });
+    if(!check.valid){
+      localStorage.removeItem('workmatch_unlocked'); // token doesn't check out against the backend — do not restore
+      return false;
+    }
+
+    Object.assign(answers, saved.answers || {});
+    Object.assign(profile, saved.profile || {});
+    matchedList = saved.matchedList;
+    renderFeed('all');
+    goTo('screen-feed');
+    return true;
+  }catch(e){ return false; } // backend unreachable — fail closed, don't restore
+}
+
+function doUnlock(accessToken){
+  saveUnlockedState(accessToken);
+  renderFeed('all');
+  goTo('screen-feed');
+}
+
+function toggleRestoreForm(){
+  const form = document.getElementById('restoreForm');
+  const showing = form.style.display !== 'none';
+  form.style.display = showing ? 'none' : 'block';
+  if(!showing) document.getElementById('restoreEmail').focus();
+}
+
+/* This is now the ONLY path that unlocks WorkMatch (see the payment
+   architecture note above the PayPal Hosted Button code) — not just a
+   cross-device recovery convenience. It sends the email to the backend,
+   which looks it up against purchases the PayPal webhook has recorded as
+   COMPLETED and, if found, mints a signed access token. Nothing here can
+   unlock content on its own — the backend is the sole authority.
+
+   Because unlocking depends on a webhook that isn't guaranteed to be
+   instant, this polls for up to ~90 seconds after a buyer says they've
+   paid, rather than failing on the first miss.
+
+   This is a lookup, not authentication: knowing someone else's email would
+   let you restore access under their name too, but since the unlocked
+   content (job listings) isn't sensitive, that's an accepted, low-stakes
+   tradeoff in exchange for not building a password/login system for a $2
+   one-time product. */
+let restorePolling = false;
+async function restoreAccess(){
+  const email = (document.getElementById('restoreEmail').value || '').trim();
+  const msg = document.getElementById('restoreMsg');
+  if(!email){ msg.textContent = 'Enter the email you paid with.'; return; }
+  if(restorePolling) return;
+  restorePolling = true;
+
+  const attempts = 12;       // ~90s total
+  const intervalMs = 7000;
+
+  for(let i = 0; i < attempts; i++){
+    msg.textContent = i === 0 ? 'Checking…' : 'Still confirming with PayPal…';
+    try{
+      const result = await apiPost('/api/access/restore', { email });
+      if(result.success && result.accessToken){
+        restorePolling = false;
+        doUnlock(result.accessToken);
+        return;
+      }
+    }catch(e){ /* keep polling through transient errors */ }
+
+    if(i < attempts - 1) await new Promise(r => setTimeout(r, intervalMs));
+  }
+
+  restorePolling = false;
+  msg.textContent = "We still can't find a completed $2 purchase for that email. If you were charged, contact support — no need to pay again.";
+}
+
+let currentFilter = 'all';
+function setFilter(f){
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.toggle('active', c.dataset.f===f));
+  renderFeed(f);
+}
+
+function renderFeed(f){
+  let list = matchedList.slice();
+  if(f==='match') list.sort((a,b)=>b.score-a.score);
+  if(f==='pay') list.sort((a,b)=> (b.salaryMax||b.salaryMin||0) - (a.salaryMax||a.salaryMin||0));
+  if(f==='noexp') list = list.filter(j=>/entry|junior|any/i.test(j.level||''));
+  if(f==='worldwide') list = list.filter(j=>classifyGeo(j.geo).type==='worldwide');
+
+  document.getElementById('feedList').innerHTML = list.map(job=>`
+    <div class="feed-card" onclick="openJobModal('${escapeHtml(job.id)}')">
+      <div>
+        <div class="fc-title">${escapeHtml(job.title)} <span style="font-weight:400; color:var(--dark-45);">— ${escapeHtml(job.company)}</span></div>
+        <div class="fc-meta"><span class="fc-match">${job.score}%</span><span>💰 ${escapeHtml(formatSalary(job))}</span><span>🌍 ${escapeHtml(job.geo||'Not specified')}</span></div>
+      </div>
+      <a class="feed-apply" href="${escapeHtml(job.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apply →</a>
+    </div>
+  `).join('');
+}
+
+/* ---------------- JOB DETAIL MODAL ----------------
+   Lets people read the full listing right here on WorkMatch — title, company,
+   pay, why it matched, and the description — instead of bouncing to Jobicy
+   just to see what a role is. The only outbound click left is the explicit
+   "Apply" button, and per Jobicy's terms that still has to point at the
+   original listing URL from the feed.
+
+   SECURITY: title/company/geo/level/jobType/description and the reasons
+   list are all third-party (or third-party-derived) content, so every one
+   of them is escapeHtml()'d before it goes into innerHTML — including the
+   plain-text description AFTER stripHtml() strips tags, since re-inserting
+   unescaped text as HTML would let entity-encoded markup in a listing
+   (e.g. "&lt;script&gt;") come back to life as real markup. The apply URL
+   is also re-validated with isSafeUrl() here, not just at fetch time. */
+function openJobModal(jobId){
+  const job = matchedList.find(j => String(j.id) === String(jobId));
+  if(!job) return;
+  const desc = job.excerpt
+    ? escapeHtml(stripHtml(job.excerpt))
+    : "This listing didn't include a full description — tap Apply to read the rest on the original posting.";
+  const applyUrl = isSafeUrl(job.url) ? escapeHtml(job.url) : '';
+  document.getElementById('jobModalContent').innerHTML = `
+    <button class="jm-close" onclick="closeJobModal()">✕</button>
+    <span class="jm-match">${job.score}% match</span>
+    <div class="jm-title">${escapeHtml(job.title)}</div>
+    <div class="jm-company">${escapeHtml(job.company)}</div>
+    <div class="jm-meta">
+      <span>💰 ${escapeHtml(formatSalary(job))}</span>
+      <span>🌍 ${escapeHtml(job.geo||'Not specified')}</span>
+      <span>${escapeHtml(job.level || 'Any level')}</span>
+      ${job.jobType && job.jobType.length ? `<span>${escapeHtml(job.jobType.join(' / '))}</span>` : ''}
+    </div>
+    <div class="jm-why">Why it fits: ${reasonsFor(job, profile).map(r=>'<b>·</b> '+escapeHtml(r)).join('&nbsp;&nbsp;')}</div>
+    <div class="jm-desc-label">About this role</div>
+    <div class="jm-desc">${desc}</div>
+    ${applyUrl
+      ? `<a class="jm-apply" href="${applyUrl}" target="_blank" rel="noopener">Apply on the original listing →</a>`
+      : `<div class="jm-fine" style="margin-bottom:10px;">This listing's application link couldn't be verified as safe, so it isn't shown here.</div>`}
+    <div class="jm-fine">Posted via Jobicy — applying opens their listing so you can complete it directly with the employer.</div>
+  `;
+  document.getElementById('jobModalBackdrop').classList.add('active');
+}
+function closeJobModal(e){
+  if(e && e.target !== e.currentTarget) return;
+  document.getElementById('jobModalBackdrop').classList.remove('active');
+}
+function stripHtml(s){
+  const d = document.createElement('div');
+  d.innerHTML = s;
+  return (d.textContent || d.innerText || '').trim();
+}
+
+renderQuestion();
+restoreUnlockedState(); // async — if this device has a backend-verified unlock, it'll skip straight to the full feed
+</script>
+</body>
+</html>
