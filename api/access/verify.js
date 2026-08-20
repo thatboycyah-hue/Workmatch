@@ -18,6 +18,7 @@ function verifyToken(token) {
       .digest("hex");
 
     if (
+      signature.length !== expected.length ||
       !crypto.timingSafeEqual(
         Buffer.from(signature),
         Buffer.from(expected)
@@ -39,7 +40,6 @@ function verifyToken(token) {
     }
 
     return payload;
-
   } catch (error) {
     console.error("Token verification failed:", error);
     return null;
@@ -54,16 +54,34 @@ export default async function handler(req, res) {
   }
 
   try {
+    /*
+     * The frontend currently sends:
+     * { accessToken: "..." }
+     *
+     * We also continue accepting:
+     * Authorization: Bearer <token>
+     *
+     * This keeps the endpoint compatible with both forms.
+     */
     const authHeader = req.headers.authorization || "";
 
-    if (!authHeader.startsWith("Bearer ")) {
+    let token = "";
+
+    if (authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7).trim();
+    }
+
+    if (!token && req.body && typeof req.body.accessToken === "string") {
+      token = req.body.accessToken.trim();
+    }
+
+    if (!token) {
       return res.status(401).json({
         valid: false,
-        error: "Authorization required"
+        error: "Access token required"
       });
     }
 
-    const token = authHeader.slice(7);
     const payload = verifyToken(token);
 
     if (!payload) {
